@@ -92,6 +92,7 @@ class Config(ClassDict):
         # )
         self.recursive_update(new_args=new_args)
         self.update_net_settings(new_args=new_args)
+        self.choose_p_net_topology(new_args=new_args)
 
         # TODO: 暂时找不到合适的位置
         self.target_steps = self.batch_size * 2
@@ -110,6 +111,7 @@ class Config(ClassDict):
             self.read_net_settings(p_net=True, v_net=False)
         if "v_net_setting_path" in new_args:
             self.read_net_settings(p_net=False, v_net=True)
+        self.update_v_net_setting(new_args)
 
     # TODO: merge `save_config()` and `write_config()`
     def save_config(self, fname="config.yaml"):
@@ -280,6 +282,89 @@ class Config(ClassDict):
             print(f"Load config from {fpath}")
         except:
             print(f"No config file found in {fpath}")
+
+    def choose_p_net_topology(self, new_args):
+        """Choose p_net topology: Waxman100, Geant, or Waxman500
+
+        Args:
+            self.p_net_topology: 'wx100', 'grant', or 'wx500'
+        """
+        if new_args.p_net_topology.lower() == "wx100":
+            self.p_net_setting["topology"][
+                "file_path"
+            ] = "dataset/topology/Waxman100.gml"
+            self.p_net_setting["num_nodes"] = 100
+            self.p_net_setting_num_nodes = 100
+        elif new_args.p_net_topology.lower() == "geant":
+            self.p_net_setting["topology"]["file_path"] = "dataset/topology/Geant.gml"
+            self.p_net_setting["num_nodes"] = 40
+            self.p_net_setting_num_nodes = 40
+        elif new_args.p_net_topology.lower() == "wx500":
+            self.p_net_setting["topology"][
+                "file_path"
+            ] = "dataset/topology/Waxman500.gml"
+            self.p_net_setting["num_nodes"] = 500
+            self.p_net_setting_num_nodes = 500
+        else:
+            raise NotImplementedError
+
+    def update_v_net_setting(self, new_args):
+        """Update v_net settings by using new_args"""
+        if new_args.p_net_setting_topology_file_path is not None:
+            assert (
+                new_args.p_net_setting_num_nodes is None
+            ), "p_net_setting_num_nodes and p_net_setting_topology_file_path cannot be set at the same time"
+        if new_args.v_net_setting_num_v_nets is not None:
+            self.v_net_setting["num_v_nets"] = new_args.v_net_setting_num_v_nets
+        if new_args.v_net_setting_v_net_size_low is not None:
+            self.v_net_setting["v_net_size"][
+                "low"
+            ] = new_args.v_net_setting_v_net_size_low
+        if new_args.v_net_setting_v_net_size_high is not None:
+            self.v_net_setting["v_net_size"][
+                "high"
+            ] = new_args.v_net_setting_v_net_size_high
+        for i in range(len(self.v_net_setting["node_attrs_setting"])):
+            if self.v_net_setting["node_attrs_setting"][i]["type"] == "resource":
+                self.v_net_setting["node_attrs_setting"][i]["high"] = (
+                    new_args.v_net_setting_node_resource_attrs_high
+                    if new_args.v_net_setting_node_resource_attrs_high is not None
+                    else self.v_net_setting["node_attrs_setting"][i]["high"]
+                )
+                self.v_net_setting["node_attrs_setting"][i]["low"] = (
+                    new_args.v_net_setting_node_resource_attrs_low
+                    if new_args.v_net_setting_node_resource_attrs_low is not None
+                    else self.v_net_setting["node_attrs_setting"][i]["low"]
+                )
+        for i in range(len(self.v_net_setting["link_attrs_setting"])):
+            if self.v_net_setting["link_attrs_setting"][i]["type"] == "resource":
+                self.v_net_setting["link_attrs_setting"][i]["high"] = (
+                    new_args.v_net_setting_link_resource_attrs_high
+                    if new_args.v_net_setting_link_resource_attrs_high is not None
+                    else self.v_net_setting["link_attrs_setting"][i]["high"]
+                )
+                self.v_net_setting["link_attrs_setting"][i]["low"] = (
+                    new_args.v_net_setting_link_resource_attrs_low
+                    if new_args.v_net_setting_link_resource_attrs_low is not None
+                    else self.v_net_setting["link_attrs_setting"][i]["low"]
+                )
+        if new_args.v_net_setting_aver_lifetime is not None:
+            self.v_net_setting["lifetime"][
+                "scale"
+            ] = new_args.v_net_setting_aver_lifetime
+        if new_args.v_net_setting_aver_arrival_rate is not None:
+            self.v_net_setting["arrival_rate"][
+                "lam"
+            ] = new_args.v_net_setting_aver_arrival_rate
+        if new_args.p_net_setting_num_nodes is not None:
+            self.p_net_setting["num_nodes"] = new_args.p_net_setting_num_nodes
+        if new_args.p_net_setting_topology_file_path is not None:
+            self.p_net_setting["topology"][
+                "file_path"
+            ] = new_args.p_net_setting_topology_file_path
+            G = nx.read_gml(self.p_net_setting["topology"]["file_path"], label="id")
+            self.p_net_setting["num_nodes"] = G.number_of_nodes()
+            self.p_net_setting["num_links"] = G.number_of_edges()
 
     def __repr__(self):
         return pprint.pformat(self.__dict__)

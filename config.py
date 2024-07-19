@@ -3,7 +3,7 @@ import json
 import yaml
 import networkx as nx
 import pprint
-from .utils.class_dict import ClassDict
+from utils.class_dict import ClassDict
 
 
 class Config(ClassDict):

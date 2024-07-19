@@ -9,7 +9,7 @@ def run(config: config):
     pass
 
 
-if __name__ == "__name__":
+if __name__ == "__main__":
     # 1. Get the command
     args = get_args()
 

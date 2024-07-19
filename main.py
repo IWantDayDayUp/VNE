@@ -1,5 +1,5 @@
-import args
 import config
+from args import get_args
 
 
 def run(config: config):
@@ -11,6 +11,7 @@ def run(config: config):
 
 if __name__ == "__name__":
     # 1. Get the command
+    args = get_args()
 
     # 2. Update config according to the given command
 

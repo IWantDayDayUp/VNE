@@ -110,25 +110,20 @@ class Config(ClassDict):
             self.read_net_settings(p_net=False, v_net=True)
         self.update_v_net_setting(new_args)
 
-    # TODO: merge `save_config()` and `write_config()`
     def save_config(self, fname="config.yaml"):
         """Save config to `config.yaml`"""
         fpath = os.path.join(self.save_dir, self.solver_name)
         if not os.path.exists(fpath):
             os.makedirs(fpath)
         fpath = os.path.join(fpath, fname)
-        self.write_config(fpath, "w")
-        print(f"Save config.yaml in {fpath}")
-
-    def write_config(self, fpath, mode="w"):
-        """Write the setting to a json / yaml file"""
-        with open(fpath, mode, encoding="utf-8") as f:
+        with open(fpath, "w", encoding="utf-8") as f:
             if fpath[-4:] == "json":
                 json.dump(vars(self), f)
             elif fpath[-4:] == "yaml":
                 yaml.dump(vars(self), f)
             else:
                 return ValueError("Only supports setting files in yaml or json format!")
+        print(f"Save config.yaml in {fpath}")
 
     def read_net_settings(self, p_net: bool, v_net: bool):
         """Read p_net or v_net settings"""

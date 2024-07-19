@@ -94,9 +94,6 @@ class Config(ClassDict):
         self.update_net_settings(new_args=new_args)
         self.choose_p_net_topology(new_args=new_args)
 
-        # TODO: 暂时找不到合适的位置
-        self.target_steps = self.batch_size * 2
-
         self.create_dirs()
         self.check_config()
         # (
@@ -246,8 +243,9 @@ class Config(ClassDict):
     def check_config(self):
         """Check all configs"""
         assert self.reusable == False, "self.reusable == True Unsupported currently!"
-        if self.target_steps != -1:
-            assert self.target_steps % self.batch_size == 0, "A should greater than b!"
+        # if self.target_steps != -1:
+        #     assert self.target_steps % self.batch_size == 0, "A should greater than b!"
+        self.target_steps = self.batch_size * 2
 
     def recursive_update(self, new_args: dict):
         """Recursively update args

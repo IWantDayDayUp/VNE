@@ -140,5 +140,4 @@ def get_all_arg_group():
 def get_args(args=None):
     get_all_arg_group()
     config = parser.parse_args(args)
-    print("sdfgvdsfgv")
     return config

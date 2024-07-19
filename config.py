@@ -3,6 +3,7 @@ import json
 import yaml
 import networkx as nx
 import pprint
+import sys
 from utils.class_dict import ClassDict
 
 
@@ -30,6 +31,7 @@ class Config(ClassDict):
         self.vn_size_threshold = kwargs.get("vn_size_threshold", 10000)
 
         # Log & Save
+        self.root_path = os.path.join(sys.argv[0], os.pardir)
         self.if_save_records = kwargs.get("if_save_records", True)
         self.if_temp_save_records = kwargs.get("if_temp_save_records", True)
         self.if_save_config = kwargs.get("if_save_config", True)
@@ -65,6 +67,9 @@ class Config(ClassDict):
         self.k_shortest = 10  # Number of shortest paths to be found
         self.allow_revocable = False  # Whether or not to allow to revoke a virtual node
         self.allow_rejection = False  # Whether or not to allow to reject a virtual node
+
+        self.batch_size = 128
+        self.target_steps = self.batch_size * 2
 
         # Read settings
         self.read_net_settings(p_net=True, v_net=True)
@@ -209,6 +214,7 @@ class Config(ClassDict):
 
     def read_setting(self, fpath):
         """Read the setting from fpath"""
+        fpath = os.path.join(self.root_path, fpath)
         with open(fpath, "r", encoding="utf-8") as f:
             if fpath[-4:] == "json":
                 setting_dict = json.load(f)
@@ -229,7 +235,7 @@ class Config(ClassDict):
         for dir in [
             self.save_dir,
             self.summary_dir,
-            self.v_sim_setting["save_dir"],
+            self.v_net_setting["save_dir"],
             self.p_net_setting["save_dir"],
         ]:
             if not os.path.exists(dir):

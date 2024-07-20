@@ -4,6 +4,7 @@ import numpy as np
 from ..network.physical_network import PhysicalNetwork
 from ..utils.data import (
     get_p_net_dataset_dir_from_setting,
+    get_v_nets_dataset_dir_from_setting,
 )
 
 
@@ -70,4 +71,21 @@ class Generator:
         Returns:
             VirtualNetworkRequestSimulator: A VirtualNetworkRequestSimulator object representing the generated dataset.
         """
-        pass
+        if not isinstance(config, dict):
+            config = vars(config)
+
+        v_sim_setting = config["v_sim_setting"]
+        random.seed(config["seed"])
+        np.random.seed(config["seed"])
+
+        v_net_sim = VirtualNetworkRequestSimulator.from_setting(v_sim_setting)
+        v_net_sim.renew()
+
+        if save:
+            v_nets_dataset_dir = get_v_nets_dataset_dir_from_setting(v_sim_setting)
+            v_net_sim.save_net(v_nets_dataset_dir)
+            if config.get("verbose", 1):
+                print(f"save v_net dataset in {v_nets_dataset_dir}")
+
+        # new_v_net_sim = VirtualNetworkRequestSimulator.load_dataset(v_nets_dataset_dir)
+        return v_net_sim

@@ -304,3 +304,36 @@ sys.path.append("..") # 等价于 sys.path.append(os.path.dirname(os.path.dirnam
 from Kate import kate # 改成绝对导入的方式导入Kate
 print(__name__)
 ```
+
+## ImportError: attempted relative import with no known parent package
+
+导致这个问题的原因: 主模块或者同级模块用到了相对导入, 且引用了主模块所在包.
+
+因为主模块所在包不会被`python`解释器视为`package`, 在`python`解释器看来主模块所在的包就是一个未知的父包, 所以如果不小心以相对导入的方式引用到了, 就会报`with no known parent package`这个错误
+
+```md
+TestModule/
+    ├── __init__.py    # 这个文件其实未起作用
+    ├── main.py    # import brother1; print(__name__)
+    ├── brother1.py # from . import brother2; print(__name__)
+    └── brother2.py # print(__name__)
+```
+
+```cmd
+Traceback (most recent call last):
+  File "/TestModule/main.py", line 1, in <module>
+    import brother1
+  File "/TestModule/brother1.py", line 1, in <module>
+    from . import brother2
+ImportError: attempted relative import with no known parent package
+```
+
+- 将相对导入给成绝对导入即可, 上面这个案例只需要把`from .`去掉即可
+
+```md
+TestModule/
+    ├── __init__.py    # 这个文件其实未起作用
+    ├── main.py    # import brother1; print(__name__)
+    ├── brother1.py # import brother2; print(__name__)
+    └── brother2.py # print(__name__)
+```

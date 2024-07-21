@@ -4,8 +4,8 @@ import random
 import numpy as np
 import networkx as nx
 
-from network import Network
-from attribute import NodeInfoAttribute, LinkInfoAttribute
+from .network import Network
+from .attribute import NodeInfoAttribute, LinkInfoAttribute
 
 
 class PhysicalNetwork(Network):

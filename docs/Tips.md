@@ -259,3 +259,48 @@ class DataSet:
 缓存的 `cached_property` 装饰器仅在查找时运行, 并且仅在同名属性不存在时运行. 当它运行时, `cached_property` 会写入具有相同名称的属性. 后续的属性读取和写入优先于缓存的 `cached_property` 方法, 其工作方式与普通属性类似.
 
 缓存的值可通过删除该属性来清空.  这允许 `cached_property` 方法再次运行
+
+## ValueError: attempted relative import beyond top-level package
+
+导致这个问题的原因: `主模块(程序入口, 通常指: main.py)` 所在同级包的子模块在使用相对导入时引用了主模块所在包.
+
+因为主模块所在包不会被python解释器视为`package`, 主模块的同级`package`被视为顶级包(也就是`top-level package`), 所以主模块所在包其实是在python解释器解析到的顶层包之外的, 如果不小心以相对导入的方式引用到了, 就会报`beyond top-level package`这个错误
+
+```md
+TestModule/
+    ├── main.py # from Tom import tom; print(__name__)
+    ├── __init__.py
+    ├── Tom
+    │   ├── __init__.py # print(__name__)
+    │   ├── tom.py # from . import tom_brother; from ..Kate import kate; print(__name__)
+    │   └── tom_brother.py # print(__name__) 
+    └── Kate      
+         ├── __init__.py # print(__name__)
+         └── kate.py # print(__name__)
+```
+
+- 把`main.py`移动到`TestModule`文件夹外面, 使之与`TestModule`平级, 这样`TestModule`即会被解析器视为一个`package`, 在其他模块中使用相对导入的方式引用到了也不会报错
+
+```md
+src/
+├── main.py # from TestModule.Tom import tom; print(__name__)
+└── TestModule/
+        ├── __init__.py # print(__name__)
+        ├── Tom
+        │   ├── __init__.py # print(__name__)
+        │   ├── tom.py # from . import tom_brother; from ..Kate import kate; print(__name__)
+        │   └── tom_brother.py # print(__name__) 
+        └── Kate      
+             ├── __init__.py # print(__name__)
+             └── kate.py # print(__name__)
+```
+
+- `tom.py`中将`TestModule`包加入到`sys.path`变量中, 并使用绝对导入的方式导入`Kate`包, 修改后的`tom.py`内容如下
+
+```python
+from . import tom_brother
+import os, sys
+sys.path.append("..") # 等价于 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from Kate import kate # 改成绝对导入的方式导入Kate
+print(__name__)
+```

@@ -1,5 +1,6 @@
 from config import Config
 from args import get_args
+from utils.generator import Generator
 
 
 def run(config: Config):
@@ -21,6 +22,9 @@ if __name__ == "__main__":
     config.update(args)
 
     # 3. Generate Dataset, if already generated, load from file
+    p_net, v_net_simulator = Generator.generate_dataset(
+        config, p_bool=True, v_bool=False, save=False
+    )
 
     # 4. Run with config
-    run(config=config)
+    # run(config=config)

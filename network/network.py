@@ -155,11 +155,11 @@ class Network(nx.Graph):
         """Create node and link attribute dictionaries from their respective settings."""
         # TODO: 封装
         self.node_attrs = {
-            n_attr_dict["name"]: Attribute.from_dict(n_attr_dict)
+            n_attr_dict["name"]: Attribute.load_from_dict(n_attr_dict)
             for n_attr_dict in self.graph["node_attrs_setting"]
         }
         self.link_attrs = {
-            e_attr_dict["name"]: Attribute.from_dict(e_attr_dict)
+            e_attr_dict["name"]: Attribute.load_from_dict(e_attr_dict)
             for e_attr_dict in self.graph["link_attrs_setting"]
         }
 

@@ -142,7 +142,7 @@ class PhysicalNetwork(Network):
             net.generate_topology(num_nodes, **topology_setting)
 
         if seed is None:
-            seed = setting.get("seed")
+            seed = setting.get("seed", 0)
         random.seed(seed)
         np.random.seed(seed=seed)
 

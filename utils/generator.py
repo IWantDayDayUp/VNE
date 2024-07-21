@@ -30,9 +30,13 @@ class Generator:
         Returns:
             Tuple: A tuple consisting of the generated Physical Network and a Virtual Network request simulator.
         """
+        print(f"\n{'-' * 20}    Generate dataset Start    {'-' * 20}\n")
+
         # TODO: 可以只用一个函数`generate_net()`来实现
         p_net = Generator.generate_p_net(config=config, save=save) if p_bool else None
         v_net_sim = Generator.generate_v_net_sim(config, save=save) if v_bool else None
+
+        print(f"\n{'-' * 20}    Generate dataset End    {'-' * 20}\n")
 
         return p_net, v_net_sim
 
@@ -52,11 +56,8 @@ class Generator:
             config = vars(config)
 
         p_net_setting = config["p_net_setting"]
-        random.seed(config["seed"])
-        np.random.seed(config["seed"])
-
-        print(p_net_setting)
-        print(config["seed"])
+        random.seed(config.get("seed", 0))
+        np.random.seed(config.get("seed", 0))
 
         p_net = PhysicalNetwork.create_from_setting(p_net_setting)
 

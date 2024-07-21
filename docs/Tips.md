@@ -236,3 +236,26 @@ def greet(name: Optional[str]) -> str:
 print(greet(None))  # 输出：Hello!
 print(greet('Alice'))  # 输出：Hello, Alice!
 ```
+
+## @cached_property
+
+它将类的方法转换为一个属性, 该属性的值只计算一次, 然后缓存为普通属性
+
+```python
+from functools import cached_property
+
+class DataSet:
+
+    def __init__(self, sequence_of_numbers):
+        self._data = tuple(sequence_of_numbers)
+
+    @cached_property
+    def stdev(self):
+        return statistics.stdev(self._data)
+```
+
+类 `DataSet` 的方法 `DataSet.stdev()` 在生命周期内变成了属性 `DataSet.stdev`
+
+缓存的 `cached_property` 装饰器仅在查找时运行, 并且仅在同名属性不存在时运行. 当它运行时, `cached_property` 会写入具有相同名称的属性. 后续的属性读取和写入优先于缓存的 `cached_property` 方法, 其工作方式与普通属性类似.
+
+缓存的值可通过删除该属性来清空.  这允许 `cached_property` 方法再次运行

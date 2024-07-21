@@ -3,7 +3,7 @@ import copy
 
 from typing import Optional
 from functools import cached_property
-from attribute import Attribute
+from .attribute import Attribute
 from networkx.classes.reportviews import EdgeView
 
 

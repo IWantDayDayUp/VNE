@@ -1,8 +1,14 @@
 import random
 import numpy as np
 
-from ..network.physical_network import PhysicalNetwork
-from ..utils.data import (
+import os, sys
+
+sys.path.append(
+    ".."
+)  # 等价于 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from network.physical_network import PhysicalNetwork
+
+from utils.data import (
     get_p_net_dataset_dir_from_setting,
     get_v_net_dataset_dir_from_setting,
 )
@@ -48,6 +54,9 @@ class Generator:
         p_net_setting = config["p_net_setting"]
         random.seed(config["seed"])
         np.random.seed(config["seed"])
+
+        print(p_net_setting)
+        print(config["seed"])
 
         p_net = PhysicalNetwork.create_from_setting(p_net_setting)
 

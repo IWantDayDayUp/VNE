@@ -4,6 +4,7 @@ import numpy as np
 from ..network.physical_network import PhysicalNetwork
 from ..utils.data import (
     get_p_net_dataset_dir_from_setting,
+    get_v_net_dataset_dir_from_setting,
 )
 
 
@@ -23,6 +24,7 @@ class Generator:
         Returns:
             Tuple: A tuple consisting of the generated Physical Network and a Virtual Network request simulator.
         """
+        # TODO: 可以只用一个函数`generate_net()`来实现
         p_net = Generator.generate_p_net(config=config, save=save) if p_bool else None
         v_net_sim = Generator.generate_v_net_sim(config, save=save) if v_bool else None
 
@@ -50,10 +52,7 @@ class Generator:
         p_net = PhysicalNetwork.create_from_setting(p_net_setting)
 
         if save:
-            p_net_dataset_dir = get_p_net_dataset_dir_from_setting(p_net_setting)
-            p_net.save_net(p_net_dataset_dir)
-            if config.get("verbose", 1):
-                print(f"save p_net dataset in {p_net_dataset_dir}")
+            Generator.save_net(p_net, p_net_setting, config, "p_net")
 
         # new_p_net = PhysicalNetwork.load_dataset(p_net_dataset_dir)
         return p_net
@@ -70,4 +69,29 @@ class Generator:
         Returns:
             VirtualNetworkRequestSimulator: A VirtualNetworkRequestSimulator object representing the generated dataset.
         """
-        pass
+        if not isinstance(config, dict):
+            config = vars(config)
+
+        v_sim_setting = config["v_sim_setting"]
+        random.seed(config["seed"])
+        np.random.seed(config["seed"])
+
+        v_net_sim = VirtualNetworkRequestSimulator.from_setting(v_sim_setting)
+        v_net_sim.renew()
+
+        if save:
+            Generator.save_net(v_net_sim, v_sim_setting, config, "v_net_sim")
+
+        # new_v_net_sim = VirtualNetworkRequestSimulator.load_dataset(v_nets_dataset_dir)
+        return v_net_sim
+
+    def save_net(net, setting, config, label):
+        """Save p_net/v_net to the specified location"""
+        if label == "p_net":
+            fpath = get_p_net_dataset_dir_from_setting(setting)
+        else:
+            fpath = get_v_net_dataset_dir_from_setting(setting)
+        net.save_net(fpath)
+
+        if config.get("verbose", 1):
+            print(f"save p_net dataset in {fpath}")

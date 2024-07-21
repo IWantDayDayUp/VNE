@@ -124,7 +124,7 @@ class Network(nx.Graph):
             self.graph[attr_name] = value
             return
         self.graph[attr_name] = value
-        self[attr_name] = value
+        self.attr_name = value
 
     def init_graph_attrs(self):
         """Initialize the graph attributes."""
@@ -137,7 +137,7 @@ class Network(nx.Graph):
         """Initialize all the attributes of self.graph"""
         for key, value in self.graph.items():
             if key not in ["num_nodes"]:
-                self[key] = value
+                self.key = value
 
     def init_node_attr(self):
         """Initialize the node attributes of the net"""

@@ -214,3 +214,25 @@ if not expression:
 # Example:
 assert self.reusable == False, "self.reusable == True Unsupported currently!"
 ```
+
+## Optional 类型提示
+
+`Optional` 类型提示是用于在函数参数或返回值中标记为`可选的类型`, 这可以帮助开发者更好地理解代码的含义, 并提高代码的可读性和可维护性
+
+– `Optional` 类型提示只能用在参数或返回值上, 不能用在变量声明上
+– 对于可选参数, 在使用之前需要进行 `None` 判断, 以避免可能的异常情况
+– 当使用 `Optional` 类型提示时, 编译器不会强制要求传入的参数必须为指定类型或 `None`, 仍然可以传入其他类型的值
+– `Optional` 类型提示只是一种标记, 并不会改变代码的行为或执行时的结果
+
+```python
+from typing import Optional
+
+def greet(name: Optional[str]) -> str:
+    if name is None:
+        return 'Hello!'
+    else:
+        return f'Hello, {name}!'
+
+print(greet(None))  # 输出：Hello!
+print(greet('Alice'))  # 输出：Hello, Alice!
+```

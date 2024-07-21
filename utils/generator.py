@@ -62,7 +62,7 @@ class Generator:
         p_net = PhysicalNetwork.create_from_setting(p_net_setting)
 
         if save:
-            Generator.save_net(p_net, p_net_setting, config, "p_net")
+            Generator.save(p_net, p_net_setting, config, "p_net")
 
         # new_p_net = PhysicalNetwork.load_dataset(p_net_dataset_dir)
         return p_net
@@ -95,12 +95,14 @@ class Generator:
         # new_v_net_sim = VirtualNetworkRequestSimulator.load_dataset(v_nets_dataset_dir)
         return v_net_sim
 
-    def save_net(net, setting, config, label):
+    def save(net, setting, config, label):
         """Save p_net/v_net to the specified location"""
         if label == "p_net":
             fpath = get_p_net_dataset_dir_from_setting(setting)
         else:
             fpath = get_v_net_dataset_dir_from_setting(setting)
+
+        fpath = os.path.normpath(fpath)
         net.save_net(fpath)
 
         if config.get("verbose", 1):

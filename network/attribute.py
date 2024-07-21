@@ -15,6 +15,11 @@ from utils.data import generate_data_with_distribution
 class Attribute(object):
 
     def __init__(self, name, owner, type, *args, **kwargs) -> None:
+        """
+        name: cpu, max_cpu, gpu, max_gpu, ram, max_ram, ...
+        owner: node, link
+        type: resource, extrema
+        """
         self.name = name
         self.owner = owner
         self.type = type
@@ -58,16 +63,16 @@ class Attribute(object):
         name = dict_copy.pop("name")
         owner = dict_copy.pop("owner")
         type = dict_copy.pop("type")
-        
+
         # print(name, owner, type)
-        
+
         assert (owner, type) in ATTRIBUTES_DICT.keys(), ValueError(
             "Unsupproted attribute!"
         )
 
         AttributeClass = ATTRIBUTES_DICT.get((owner, type))
 
-        return AttributeClass(name, owner, type, **dict_copy)
+        return AttributeClass(name, **dict_copy)
 
     def get_attr_by_name(self, net, id):
         """Get the specified attribute of the node or link with the specified ID of the network"""
@@ -243,7 +248,7 @@ class LinkMethod:
 
 class NodeResourceAttribute(Attribute, NodeMethod, ResourceMethod):
 
-    def __init__(self, name, owner, type, *args, **kwargs) -> None:
+    def __init__(self, name, *args, **kwargs) -> None:
         super(NodeResourceAttribute, self).__init__(
             name, "node", "resource", *args, **kwargs
         )
@@ -285,7 +290,7 @@ class NodePositionAttribute(Attribute, NodeMethod):
 
 class LinkResourceAttribute(Attribute, LinkMethod, ResourceMethod):
 
-    def __init__(self, name, owner, type, *args, **kwargs) -> None:
+    def __init__(self, name, *args, **kwargs) -> None:
         super(LinkResourceAttribute, self).__init__(
             name, "link", "resource", *args, **kwargs
         )

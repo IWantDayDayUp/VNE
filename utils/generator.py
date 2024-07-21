@@ -24,6 +24,7 @@ class Generator:
         Returns:
             Tuple: A tuple consisting of the generated Physical Network and a Virtual Network request simulator.
         """
+        # TODO: 可以只用一个函数`generate_net()`来实现
         p_net = Generator.generate_p_net(config=config, save=save) if p_bool else None
         v_net_sim = Generator.generate_v_net_sim(config, save=save) if v_bool else None
 

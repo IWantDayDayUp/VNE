@@ -3,8 +3,9 @@ import copy
 
 from typing import Optional
 from functools import cached_property
+from networkx.classes.reportviews import DegreeView, EdgeView, NodeView
+
 from .attribute import Attribute
-from networkx.classes.reportviews import EdgeView
 
 
 class Network(nx.Graph):
@@ -12,11 +13,13 @@ class Network(nx.Graph):
     Network class inherited from networkx.Graph.
 
     Attributes:
-        node_attrs: Node attributes.
-        link_attrs: Link attributes.
+        self.graph: self.graph_attr_dict_factory()  # dictionary for graph attributes
+        self.node_attrs: Node attributes, dict-like: {'cpu': NodeResourceAttribute(name=cpu), ...}.
+        self.link_attrs: Link attributes, dict-like: {'bw': LinkResourceAttribute(name=bw), ...}
         graph_attrs: Graph attributes.
 
     Methods:
+        generate_topology: Generate the network topology.
         create_attrs_from_setting: Create node and link attribute dictionaries from their respective settings.
         init_graph_attrs: Initialize graph attributes.
         set_net_attrs: Set graph attributes data.
@@ -27,13 +30,6 @@ class Network(nx.Graph):
         get_link_attrs_data: Get link attributes data.
         get_node_attr_data: Get node attribute data.
         get_link_attr_data: Get link attribute data.
-        set_node_attrs_data: Set node attributes data.
-        set_link_attrs_data: Set link attributes data.
-        set_node_attr_data: Set node attribute data.
-        set_link_attr_data: Set link attribute data.
-        generate_topology: Generate the network topology.
-        check_attrs_existence: Check if all defined attributes exist in the graph.
-        write_setting: Write network setting to file.
     """
 
     def __init__(
@@ -54,15 +50,8 @@ class Network(nx.Graph):
         """
         super(Network, self).__init__(incoming_graph_data)
 
-        # TODO
-        # init graph attributes
         self.init_graph_attrs()
-
-        # set graph attributes
-        # self.graph: dictionary for graph attributes
-        self.graph["node_attrs_setting"] += node_attrs_setting
-        self.graph["link_attrs_setting"] += link_attrs_setting
-        self.create_attrs_from_setting()
+        self.create_attrs_from_setting(node_attrs_setting, link_attrs_setting)
 
         # Read extra kwargs
         self.set_net_attrs(kwargs)
@@ -82,6 +71,7 @@ class Network(nx.Graph):
         )
 
         self.set_net_attrs({"num_nodes": num_nodes, "type": type})
+
         if type == "path":
             G = nx.path_graph(num_nodes)
         elif type == "star":
@@ -110,16 +100,23 @@ class Network(nx.Graph):
                 not_connected = not nx.is_connected(G)
         else:
             raise NotImplementedError
+
+        # {0: {'pos': (0.8444218515250481, 0.7579544029403025)}, ...}
         self.__dict__["_node"] = G.__dict__["_node"]
+        # {0: {18: {}, 26: {}, 29: {}, 30: {}, 38: {}, 39: {}, 43: {}, 49: {}, 50: {}, 65: {}, 67: {}, 74: {}, 75: {}, 83: {}, 90: {}}, ...}
         self.__dict__["_adj"] = G.__dict__["_adj"]
 
     def set_net_attrs(self, attrs_data: dict):
-        """Set some attributes of the network"""
+        """Set some attributes of the network.
+
+        Args:
+        attrs_data (dict): A dictionary of attr_data: {"num_nodes": 100, "save_dir": "dataset/p_net", ...}
+        """
         for key, value in attrs_data.items():
             self.set_net_attr(key, value)
 
     def set_net_attr(self, attr_name, value):
-        """Set a attribute of the network: net.attr_name = value."""
+        """Set one attribute of the network at a time"""
         if attr_name in ["num_nodes"]:
             self.graph[attr_name] = value
             return
@@ -128,38 +125,60 @@ class Network(nx.Graph):
 
     def init_graph_attrs(self):
         """Initialize the graph attributes."""
-        # TODO: 这里的逻辑可能有问题: 为什么不是所有属性全归零, 而是有选择的赋值?
         self.init_node_attr()
         self.init_link_attr()
         self.init_graph_items()
 
     def init_graph_items(self):
-        """Initialize all the attributes of self.graph"""
+        """Initialize all the attributes of G, except for `num_nodes`"""
         for key, value in self.graph.items():
             if key not in ["num_nodes"]:
                 self.key = value
 
     def init_node_attr(self):
-        """Initialize the node attributes of the net"""
+        """Initialize the node attributes setting of the net"""
         self.graph["node_attrs_setting"] = (
             [] if "node_attrs_setting" not in self.graph else None
         )
 
     def init_link_attr(self):
-        """Initialize the link attributes of the net"""
+        """Initialize the link attributes setting of the net"""
         self.graph["link_attrs_setting"] = (
             [] if "link_attrs_setting" not in self.graph else None
         )
 
-    def create_attrs_from_setting(self):
-        """Create node and link attribute dictionaries from their respective settings."""
-        # TODO: 封装
+    def create_attrs_from_setting(self, node_attrs_setting, link_attrs_setting):
+        """Create node and link attribute dictionaries from their respective settings.
+
+        Args:
+            node_attrs_setting (dict): A dictionary of node_attr settings: {{"name": "cpu", "dtype": "int", ...}, ...}.
+            link_attrs_setting (dict): A dictionary of link_attr settings: {{"name": "bw", "dtype": "int", ...}, ...}.
+
+        Examples
+        --------
+
+        G.node_attrs (dict-like):
+            {
+                'cpu': NodeResourceAttribute(name=cpu, owner=node, type=resource, originator=None, generative=True, distribution=uniform, dtype=int, low=50, high=100),
+                'max_cpu': NodeExtremaAttribute(name=max_cpu, owner=node, type=extrema, originator=cpu, generative=False),
+                ...
+            }
+        G.link_attrs (dict-like):"
+            {
+                'bw': LinkResourceAttribute(name=bw, owner=link, type=resource, originator=None, generative=True, distribution=uniform, dtype=int, low=50, high=100),
+                'max_bw': LinkExtremaAttribute(name=max_bw, owner=link, type=extrema, originator=bw, generative=False)
+            }
+        """
+
+        self.graph["node_attrs_setting"] += node_attrs_setting
+        self.graph["link_attrs_setting"] += link_attrs_setting
+
         self.node_attrs = {
-            n_attr_dict["name"]: Attribute.load_from_dict(n_attr_dict)
+            n_attr_dict["name"]: Attribute.create_attr_from_dict(n_attr_dict)
             for n_attr_dict in self.graph["node_attrs_setting"]
         }
         self.link_attrs = {
-            e_attr_dict["name"]: Attribute.load_from_dict(e_attr_dict)
+            e_attr_dict["name"]: Attribute.create_attr_from_dict(e_attr_dict)
             for e_attr_dict in self.graph["link_attrs_setting"]
         }
 
@@ -183,53 +202,46 @@ class Network(nx.Graph):
             ), f"{l_attr_name}"
 
     def generate_attrs_data(self, n_bool: bool = False, l_bool: bool = False):
-        """Generate the data of network attributes based on attributes."""
+        """Generate all attributes specified by the `self.node_attrs/self.link_attrs` and updated them into the network(self)
+
+        Args:
+            n_bool: Whether or not to generate `node` attribute data
+            l_bool: Whether or not to generate `link` attribute data
+        """
         if n_bool:
-            self.generate_node_attr()
+            self.generate_data(self.node_attrs)
         if l_bool:
-            self.generate_link_attr()
+            self.generate_data(self.link_attrs)
 
-    def generate_node_attr(self):
-        """Generate node attr"""
-        for n_attr in self.node_attrs.values():
-            if n_attr.generative or n_attr.type == "extrema":
-                attribute_data = n_attr.generate_data(self)
-                n_attr.set_data(self, attribute_data)
+    def generate_data(self, attrs):
+        """Generate all attributes specified by the `attrs` and updated them into the network(self)
 
-    def generate_link_attr(self):
-        """Generate link attr"""
-        for l_attr in self.link_attrs.values():
-            if l_attr.generative or l_attr.type == "extrema":
-                attribute_data = l_attr.generate_data(self)
-                l_attr.set_data(self, attribute_data)
+        Args:
+            attrs (dict-like): `Attribute` instances that needs to generate attribute data
+        """
+        for attr in attrs.values():
+            if attr.generative or attr.type == "extrema":
+                attribute_data = attr.generate_data(self)
+                attr.set_data(self, attribute_data)
 
     @property
-    def num_node_features(self) -> int:
+    def num_node_attrs(self) -> int:
         """
-        Get the number of node features.
-
-        Returns:
-            int: The number of node features.
+        Retrun the number of node attrs.
         """
         return len(self.node_attrs)
 
     @property
-    def num_link_features(self) -> int:
+    def num_link_attrs(self) -> int:
         """
-        Get the number of link features.
-
-        Returns:
-            int: The number of link features.
+        Return the number of link attrs.
         """
         return len(self.link_attrs)
 
     @property
-    def num_node_resource_features(self) -> int:
+    def num_node_resource_attrs(self) -> int:
         """
-        Get the number of node resource features.
-
-        Returns:
-            int: The number of node resource features.
+        Return the number of node resource attrs.
         """
         return len(
             [
@@ -240,12 +252,9 @@ class Network(nx.Graph):
         )
 
     @property
-    def num_link_resource_features(self) -> int:
+    def num_link_resource_attrs(self) -> int:
         """
-        Get the number of link resource features.
-
-        Returns:
-            int: The number of link resource features.
+        Return the number of link resource attrs.
         """
         return len(
             [
@@ -272,7 +281,7 @@ class Network(nx.Graph):
 
     @cached_property
     def links(self):
-        """Get the number of links."""
+        """Get all the links."""
         return EdgeView(self)
 
     @property
@@ -282,7 +291,7 @@ class Network(nx.Graph):
 
     def get_net_attrs(self, names: list = None):
         """
-        Get the attributes of the network.
+        Get the G.graph attributes specified by `names`.
 
         Args:
             names (list): The names of the attributes to retrieve. If None, return all attributes.
@@ -296,7 +305,7 @@ class Network(nx.Graph):
 
     def get_node_attrs(self, types: list = None, names: list = None):
         """
-        Get the node attributes of the network.
+        Get the node attributes specified by `types` and `names`.
 
         Args:
             types (list): The types of the node attributes to retrieve. If None, return all attributes.
@@ -318,7 +327,7 @@ class Network(nx.Graph):
         return selected_node_attrs
 
     def get_link_attrs(self, types: list = None, names: list = None):
-        """Get the link attributes of the network.
+        """Get the link attributes specified by `types` and `names`.
 
         Args:
             types (list): The types of the link attributes to retrieve. If None, return all attributes.
@@ -340,7 +349,14 @@ class Network(nx.Graph):
         return selected_link_attrs
 
     def get_node_attrs_data(self, attrs_names):
-        """Get the data of node attributes."""
+        """Get the data for the specified node attributes.
+
+        Args:
+            attrs_names (dict / list): The names of the node attributes to retrieve.
+
+        Returns:
+            list: A list of node attributes data: [[attr_1 data], [attr_2 data], ...]
+        """
         if isinstance(attrs_names[0], str):
             node_attrs_data = [
                 list(nx.get_node_attributes(self, n_attr_name).values())
@@ -351,7 +367,14 @@ class Network(nx.Graph):
         return node_attrs_data
 
     def get_link_attrs_data(self, link_attrs):
-        """Get the data of link attributes."""
+        """Get the data for the specified link attributes.
+
+        Args:
+            attrs_names (dict / list): The names of the link attributes to retrieve.
+
+        Returns:
+            list: A list of link attributes data: [[attr_1 data], [attr_2 data], ...]
+        """
         if isinstance(link_attrs[0], str):
             link_attrs_data = [
                 list(nx.get_edge_attributes(self, l_attr_name).values())
@@ -376,21 +399,21 @@ class Network(nx.Graph):
         return aggregation_data
 
     def update_node_resources(self, node_id, v_net_node, method="+"):
-        """Update (increase) the value of node atributes."""
+        """Update (increase) the value of node attributes."""
         for n_attr in self.node_attrs.keys():
             if n_attr.type != "resource":
                 continue
             n_attr.update(self.nodes[node_id], v_net_node, method)
 
     def update_link_resources(self, link_pair, v_net_link, method="+"):
-        """Update (increase) the value of link atributes."""
+        """Update (increase) the value of link attributes."""
         for l_attr in self.link_attrs:
             if l_attr.type != "resource":
                 continue
             l_attr.update(self.links[link_pair], v_net_link, method)
 
     def update_path_resources(self, path, v_net_link, method="+"):
-        """Update (increase) the value of links atributes of path with the same increments."""
+        """Update (increase) the value of links attributes of path with the same increments."""
         assert len(path) >= 1
         for l_attr in self.link_attrs:
             l_attr.update_path(self, path, v_net_link, method)
@@ -411,7 +434,7 @@ class Network(nx.Graph):
             "node_attrs": [n_attr.to_dict() for n_attr in self.node_attrs.values()],
             "link_attrs": [l_attr.to_dict() for l_attr in self.link_attrs.values()],
         }
-        # TODO: 考虑到写入特定文件的多处使用, 是不是应该封装?
+        # TODO: Create a new Independent `Write_to_file()`` functions
         # write_setting(attrs_dict, fpath)
 
     def clone(self):
@@ -420,5 +443,112 @@ class Network(nx.Graph):
         )
 
 
-if __name__ == "__main___":
-    pass
+if __name__ == "__main__":
+
+    node_attrs_setting = [
+        {
+            "name": "cpu",
+            "distribution": "uniform",
+            "dtype": "int",
+            "generative": True,
+            "high": 100,
+            "low": 50,
+            "owner": "node",
+            "type": "resource",
+        },
+        {"name": "max_cpu", "originator": "cpu", "owner": "node", "type": "extrema"},
+        {
+            "name": "gpu",
+            "distribution": "uniform",
+            "dtype": "int",
+            "generative": True,
+            "high": 100,
+            "low": 50,
+            "owner": "node",
+            "type": "resource",
+        },
+        {"name": "max_gpu", "originator": "gpu", "owner": "node", "type": "extrema"},
+        {
+            "name": "ram",
+            "distribution": "uniform",
+            "dtype": "int",
+            "generative": True,
+            "high": 100,
+            "low": 50,
+            "owner": "node",
+            "type": "resource",
+        },
+        {"name": "max_ram", "originator": "ram", "owner": "node", "type": "extrema"},
+    ]
+    link_attrs_setting = [
+        {
+            "name": "bw",
+            "distribution": "uniform",
+            "dtype": "int",
+            "generative": True,
+            "high": 100,
+            "low": 50,
+            "owner": "link",
+            "type": "resource",
+        },
+        {"name": "max_bw", "originator": "bw", "owner": "link", "type": "extrema"},
+    ]
+    kwargs = {
+        "num_nodes": 100,
+        "save_dir": "dataset/p_net",
+        "topology": {
+            "type": "waxman",
+            "wm_alpha": 0.5,
+            "wm_beta": 0.2,
+            "file_path": "dataset/topology/Waxman100.gml",
+        },
+        "file_name": "p_net.gml",
+    }
+
+    """
+    Get a Network instance
+    """
+    G = Network(
+        None,
+        node_attrs_setting=node_attrs_setting,
+        link_attrs_setting=link_attrs_setting,
+        **kwargs,
+    )
+
+    """
+    Create node/link attrs
+    """
+    print("G.attrs: ", G.graph.keys())
+    # for k, v in G.graph.items():
+    #     print(k, v)
+
+    # print(G.graph["node_attrs_setting"])
+    # print(G.graph["link_attrs_setting"])
+
+    print("G.node_attrs: ", G.node_attrs.keys())
+    print("G.link_attrs: ", G.link_attrs.keys())
+
+    print("G.get_node_attrs()[0]: ", G.get_node_attrs()[0])
+    print("G.get_link_attrs()[0]: ", G.get_link_attrs()[0])
+
+    """
+    Create G topology
+    """
+    G.generate_topology(
+        num_nodes=kwargs["num_nodes"],
+        type=kwargs["topology"]["type"],
+        kwargs=kwargs["topology"],
+    )
+    print("G.number_of_nodes(): ", G.number_of_nodes())  # 100
+    print("G.nodes.items()[0]: ", list(G.nodes.items())[0])  # 自带 `pos` 属性
+
+    """
+    Generate node/link attrs data
+    """
+    G.generate_attrs_data(n_bool=True, l_bool=False)
+    print("G.nodes.items()[0]: ", list(G.nodes.items())[0])
+
+    """
+    Get G node/link attrs data
+    """
+    print("cpu attr_data: ", G.get_node_attrs_data(["cpu"]))

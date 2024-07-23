@@ -143,7 +143,8 @@ class Attribute(object):
            np.ndarray: [34, 45, 65, 45, ...] for example
         """
         assert self.generative
-        size = net.num_nodes if self.owner == "node" else net.num_links
+        # size = net.num_nodes if self.owner == "node" else net.num_links
+        size = net.number_of_nodes() if self.owner == "node" else net.number_of_links()
 
         if self.distribution == "uniform":
             kwargs = {"low": self.low, "high": self.high}

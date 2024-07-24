@@ -214,3 +214,126 @@ if not expression:
 # Example:
 assert self.reusable == False, "self.reusable == True Unsupported currently!"
 ```
+
+## Optional 类型提示
+
+`Optional` 类型提示是用于在函数参数或返回值中标记为`可选的类型`, 这可以帮助开发者更好地理解代码的含义, 并提高代码的可读性和可维护性
+
+– `Optional` 类型提示只能用在参数或返回值上, 不能用在变量声明上
+– 对于可选参数, 在使用之前需要进行 `None` 判断, 以避免可能的异常情况
+– 当使用 `Optional` 类型提示时, 编译器不会强制要求传入的参数必须为指定类型或 `None`, 仍然可以传入其他类型的值
+– `Optional` 类型提示只是一种标记, 并不会改变代码的行为或执行时的结果
+
+```python
+from typing import Optional
+
+def greet(name: Optional[str]) -> str:
+    if name is None:
+        return 'Hello!'
+    else:
+        return f'Hello, {name}!'
+
+print(greet(None))  # 输出：Hello!
+print(greet('Alice'))  # 输出：Hello, Alice!
+```
+
+## @cached_property
+
+它将类的方法转换为一个属性, 该属性的值只计算一次, 然后缓存为普通属性
+
+```python
+from functools import cached_property
+
+class DataSet:
+
+    def __init__(self, sequence_of_numbers):
+        self._data = tuple(sequence_of_numbers)
+
+    @cached_property
+    def stdev(self):
+        return statistics.stdev(self._data)
+```
+
+类 `DataSet` 的方法 `DataSet.stdev()` 在生命周期内变成了属性 `DataSet.stdev`
+
+缓存的 `cached_property` 装饰器仅在查找时运行, 并且仅在同名属性不存在时运行. 当它运行时, `cached_property` 会写入具有相同名称的属性. 后续的属性读取和写入优先于缓存的 `cached_property` 方法, 其工作方式与普通属性类似.
+
+缓存的值可通过删除该属性来清空.  这允许 `cached_property` 方法再次运行
+
+## ValueError: attempted relative import beyond top-level package
+
+导致这个问题的原因: `主模块(程序入口, 通常指: main.py)` 所在同级包的子模块在使用相对导入时引用了主模块所在包.
+
+因为主模块所在包不会被python解释器视为`package`, 主模块的同级`package`被视为顶级包(也就是`top-level package`), 所以主模块所在包其实是在python解释器解析到的顶层包之外的, 如果不小心以相对导入的方式引用到了, 就会报`beyond top-level package`这个错误
+
+```md
+TestModule/
+    ├── main.py # from Tom import tom; print(__name__)
+    ├── __init__.py
+    ├── Tom
+    │   ├── __init__.py # print(__name__)
+    │   ├── tom.py # from . import tom_brother; from ..Kate import kate; print(__name__)
+    │   └── tom_brother.py # print(__name__) 
+    └── Kate      
+         ├── __init__.py # print(__name__)
+         └── kate.py # print(__name__)
+```
+
+- 把`main.py`移动到`TestModule`文件夹外面, 使之与`TestModule`平级, 这样`TestModule`即会被解析器视为一个`package`, 在其他模块中使用相对导入的方式引用到了也不会报错
+
+```md
+src/
+├── main.py # from TestModule.Tom import tom; print(__name__)
+└── TestModule/
+        ├── __init__.py # print(__name__)
+        ├── Tom
+        │   ├── __init__.py # print(__name__)
+        │   ├── tom.py # from . import tom_brother; from ..Kate import kate; print(__name__)
+        │   └── tom_brother.py # print(__name__) 
+        └── Kate      
+             ├── __init__.py # print(__name__)
+             └── kate.py # print(__name__)
+```
+
+- `tom.py`中将`TestModule`包加入到`sys.path`变量中, 并使用绝对导入的方式导入`Kate`包, 修改后的`tom.py`内容如下
+
+```python
+from . import tom_brother
+import os, sys
+sys.path.append("..") # 等价于 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from Kate import kate # 改成绝对导入的方式导入Kate
+print(__name__)
+```
+
+## ImportError: attempted relative import with no known parent package
+
+导致这个问题的原因: 主模块或者同级模块用到了相对导入, 且引用了主模块所在包.
+
+因为主模块所在包不会被`python`解释器视为`package`, 在`python`解释器看来主模块所在的包就是一个未知的父包, 所以如果不小心以相对导入的方式引用到了, 就会报`with no known parent package`这个错误
+
+```md
+TestModule/
+    ├── __init__.py    # 这个文件其实未起作用
+    ├── main.py    # import brother1; print(__name__)
+    ├── brother1.py # from . import brother2; print(__name__)
+    └── brother2.py # print(__name__)
+```
+
+```cmd
+Traceback (most recent call last):
+  File "/TestModule/main.py", line 1, in <module>
+    import brother1
+  File "/TestModule/brother1.py", line 1, in <module>
+    from . import brother2
+ImportError: attempted relative import with no known parent package
+```
+
+- 将相对导入给成绝对导入即可, 上面这个案例只需要把`from .`去掉即可
+
+```md
+TestModule/
+    ├── __init__.py    # 这个文件其实未起作用
+    ├── main.py    # import brother1; print(__name__)
+    ├── brother1.py # import brother2; print(__name__)
+    └── brother2.py # print(__name__)
+```

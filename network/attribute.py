@@ -2,14 +2,8 @@ import copy
 import numpy as np
 import networkx as nx
 
-import os, sys
-
-sys.path.append(
-    ".."
-)  # 等价于 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-
-from utils.path import path_to_links
-from utils.data import generate_data_with_distribution
+from .utils import path_to_links
+from .utils import generate_data_with_distribution
 
 
 class Attribute(object):
@@ -144,7 +138,7 @@ class Attribute(object):
         """
         assert self.generative
         # size = net.num_nodes if self.owner == "node" else net.num_links
-        size = net.number_of_nodes() if self.owner == "node" else net.number_of_links()
+        size = net.number_of_nodes() if self.owner == "node" else net.number_of_edges()
 
         if self.distribution == "uniform":
             kwargs = {"low": self.low, "high": self.high}

@@ -337,3 +337,18 @@ TestModule/
     ├── brother1.py # import brother2; print(__name__)
     └── brother2.py # print(__name__)
 ```
+
+## os.path
+
+```python
+import os, sys
+
+# 1. 转换`path`的大小写和斜杠
+os.path.normcase(path)
+
+# 2. 规范`path`字符串形式
+os.path.normpath(path)
+
+# 3. 以当前`main.py`所在的文件夹为基准的绝对路径
+os.path.join(sys.argv[0], os.pardir)
+```

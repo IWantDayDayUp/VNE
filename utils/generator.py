@@ -7,6 +7,7 @@ sys.path.append(
     ".."
 )  # 等价于 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from network.physical_network import PhysicalNetwork
+from network.virtual_network_sim import VirtualNetworkRequestSimulator
 
 from utils.data import (
     get_p_net_dataset_dir_from_setting,
@@ -82,15 +83,15 @@ class Generator:
         if not isinstance(config, dict):
             config = vars(config)
 
-        v_sim_setting = config["v_sim_setting"]
-        random.seed(config["seed"])
-        np.random.seed(config["seed"])
+        v_net_setting = config["v_net_setting"]
+        random.seed(config.get("seed", 0))
+        np.random.seed(config.get("seed", 0))
 
-        v_net_sim = VirtualNetworkRequestSimulator.from_setting(v_sim_setting)
-        v_net_sim.renew()
+        v_net_sim = VirtualNetworkRequestSimulator.from_setting(v_net_setting)
+        v_net_sim.generate_sim(v_nets=True, events=True, seed=None)
 
         if save:
-            Generator.save_net(v_net_sim, v_sim_setting, config, "v_net_sim")
+            Generator.save(v_net_sim, v_net_setting, config, "v_net_sim")
 
         # new_v_net_sim = VirtualNetworkRequestSimulator.load_dataset(v_nets_dataset_dir)
         return v_net_sim

@@ -1,6 +1,6 @@
 from config import Config
 from args import get_args
-from utils.generator import Generator
+from network.generator import Generator
 
 
 def run(config: Config):

@@ -3,8 +3,9 @@ import copy
 import random
 import numpy as np
 
-from .utils import read_setting, write_setting, generate_data_with_distribution
 from .virtual_network import VirtualNetwork
+from .utils import read_setting, write_setting
+from .utils import generate_data_with_distribution
 
 
 class VirtualNetworkRequestSimulator(object):

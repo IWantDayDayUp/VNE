@@ -1,17 +1,12 @@
+import os
 import random
 import numpy as np
 
-import os, sys
-
-sys.path.append(
-    ".."
-)  # 等价于 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from network.physical_network import PhysicalNetwork
-from network.virtual_network_sim import VirtualNetworkRequestSimulator
-
-from utils.data import (
+from .physical_network import PhysicalNetwork
+from .virtual_network_sim import VirtualNetworkRequestSimulator
+from .utils import (
     get_p_net_dataset_dir_from_setting,
-    get_v_net_dataset_dir_from_setting,
+    get_v_nets_dataset_dir_from_setting,
 )
 
 
@@ -101,7 +96,7 @@ class Generator:
         if label == "p_net":
             fpath = get_p_net_dataset_dir_from_setting(setting)
         else:
-            fpath = get_v_net_dataset_dir_from_setting(setting)
+            fpath = get_v_nets_dataset_dir_from_setting(setting)
 
         fpath = os.path.normpath(fpath)
         net.save_net(fpath)

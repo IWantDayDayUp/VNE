@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     # 3. Generate Dataset, if already generated, load from file
     p_net, v_net_simulator = Generator.generate_dataset(
-        config, p_bool=True, v_bool=False, save=False
+        config, p_bool=True, v_bool=True, save=False
     )
 
     # 4. Run with config

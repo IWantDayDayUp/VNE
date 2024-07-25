@@ -72,3 +72,6 @@ class Environment:
             "v_sim_setting_num_link_resource_attrs",
         ]:
             setattr(obj, key, config_dict[key]) if not hasattr(obj, key) else None
+
+class SolutionStepEnvironment(Environment):
+    pass

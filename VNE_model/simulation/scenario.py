@@ -6,9 +6,9 @@ from .counter import Counter
 from .recorder import Recorder
 from .solution import Solution
 
-from VNE.network.physical_network import PhysicalNetwork
-from VNE.network.virtual_network_sim import VirtualNetworkRequestSimulator
-from VNE.network.utils import get_p_net_dataset_dir_from_setting
+from ..network.physical_network import PhysicalNetwork
+from ..network.virtual_network_sim import VirtualNetworkRequestSimulator
+from ..network.utils import get_p_net_dataset_dir_from_setting
 
 
 class Scenario:
@@ -24,13 +24,13 @@ class Scenario:
     def from_config(cls, Env, Solver, config):
         """Create scenario from setting"""
         counter = Counter(
-            config.v_sim_setting["node_attrs_setting"],
-            config.v_sim_setting["link_attrs_setting"],
+            config.v_net_setting["node_attrs_setting"],
+            config.v_net_setting["link_attrs_setting"],
             **vars(config),
         )
         controller = Controller(
-            config.v_sim_setting["node_attrs_setting"],
-            config.v_sim_setting["link_attrs_setting"],
+            config.v_net_setting["node_attrs_setting"],
+            config.v_net_setting["link_attrs_setting"],
             **vars(config),
         )
         recorder = Recorder(counter, **vars(config))
@@ -69,3 +69,58 @@ class Scenario:
             config.save()
 
         return scenario
+
+    def ready(self):
+        pass
+
+
+class BasicScenario(Scenario):
+    """
+    `Basic` means `Time passes by unit(timewindow = 1)`
+    """
+
+    def __init__(self, env, solver, config):
+        super(BasicScenario, self).__init__(env, solver, config)
+
+    def run(self):
+        self.ready()
+
+        for epoch_id in range(self.config.num_epochs):
+            print(f"\nEpoch {epoch_id}") if self.verbose >= 2 else None
+
+            self.env.epoch_id = epoch_id
+            self.solver.epoch_id = epoch_id
+
+            state = self.env.reset()
+
+            pbar = (
+                tqdm.tqdm(
+                    desc=f"Running with {self.config.solver_name} in epoch {epoch_id}",
+                    total=self.env.num_v_nets,
+                )
+                if self.verbose <= 1
+                else None
+            )
+
+            while True:
+                solution = self.solver.solve(state)
+
+                next_state, _, done, info = self.env.step(solution)
+
+                if pbar is not None:
+                    pbar.update(1)
+                    pbar.set_postfix(
+                        {
+                            "ac": f'{info["success_count"] / info["v_net_count"]:1.2f}',
+                            "r2c": f'{info["long_term_r2c_ratio"]:1.2f}',
+                            "inservice": f'{info["inservice_count"]:05d}',
+                        }
+                    )
+
+                if done:
+                    break
+                state = next_state
+
+            if pbar is not None:
+                pbar.close()
+

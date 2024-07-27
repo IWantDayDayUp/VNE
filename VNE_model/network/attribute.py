@@ -228,7 +228,7 @@ class ResourceMethod:
 
         return True
 
-    def _check_one_element(self, v_net, p_net, method="le"):
+    def _check_one_element(self, v, p, method="le"):
         """Determine whether or not the mapping requirements are met
 
         Args:
@@ -241,20 +241,21 @@ class ResourceMethod:
             value: The remaining resource after the mapping
         """
         assert method in [">=", "<=", "ge", "le", "eq"]
+        
         if method in [">=", "ge"]:
             return (
-                v_net[self.name] >= p_net[self.name],
-                v_net[self.name] - p_net[self.name],
+                v[self.name] >= p[self.name],
+                v[self.name] - p[self.name],
             )
+
         elif method in ["<=", "le"]:
             return (
-                v_net[self.name] <= p_net[self.name],
-                p_net[self.name] - v_net[self.name],
+                v[self.name] <= p[self.name],
+                p[self.name] - v[self.name],
             )
+
         elif method in ["==", "eq"]:
-            return v_net[self.name] == p_net[self.name], abs(
-                v_net[self.name] - p_net[self.name]
-            )
+            return v[self.name] == p[self.name], abs(v[self.name] - p[self.name])
         else:
             raise NotImplementedError(f"Used method {method}")
 

@@ -17,6 +17,18 @@ class ClassDict(object):
         cls.__init__ = dict
         return cls
 
+    def to_dict(self):
+        """Return a dictionary containing the contents of the ClassDict object."""
+        solution_dict = copy.deepcopy(self.__dict__)
+        for order_dict_key in [
+            "node_slots",
+            "link_paths",
+            "node_slots_info",
+            "link_paths_info",
+        ]:
+            solution_dict[order_dict_key] = dict(solution_dict[order_dict_key])
+        return solution_dict
+
     def __getitem__(self, key):
         if isinstance(key, str):
             return getattr(self, key, None)

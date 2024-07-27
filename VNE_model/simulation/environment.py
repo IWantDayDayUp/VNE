@@ -410,4 +410,116 @@ class Environment:
 
 
 class SolutionStepEnvironment(Environment):
+
+    def __init__(
+        self,
+        p_net: PhysicalNetwork,
+        v_net_simulator: VirtualNetworkRequestSimulator,
+        controller: Controller,
+        recorder: Recorder,
+        calculator: Calculator,
+        **kwargs,
+    ):
+        super(SolutionStepEnvironment, self).__init__(
+            p_net, v_net_simulator, controller, recorder, calculator, **kwargs
+        )
+
+    def step(self, solution: Solution):
+        """
+        Step the environment with the solution.
+
+        Args:
+            solution (Solution): the solution to be deployed.
+
+        Returns:
+            observation (dict): the observation of the environment.
+            reward (float): the reward of the step.
+            done (bool): whether the episode is done.
+            info (dict): the information of the step.
+        """
+        # Enter
+        self.solution = solution
+        # Check System Constraints
+        if self.solution["v_net_violation"] > 0:
+            solution["result"] = False
+        if (
+            solution["result"]
+            and self.solution["v_net_r2c_ratio"] < self.r2c_ratio_threshold
+            and self.v_net.num_nodes > self.vn_size_threshold
+        ):
+            solution["result"] = False
+            solution["description"] = "r2c_ratio < threshold"
+            print(
+                f"size {self.v_net.num_nodes}, r2c_ratio < threshold",
+                self.solution["v_net_r2c_ratio"],
+                self.r2c_ratio_threshold,
+            )
+        self.calculator.count_solution(self.v_net, self.solution)
+        # Success
+        if solution["result"]:
+            assert len(solution["node_slots"]) == self.v_net.num_nodes
+            assert len(solution["link_paths"]) == self.v_net.num_links
+            self.solution["description"] = "Success"
+            total_p_resource_2 = self.calculator.calc_sum_pnet_resource(
+                self.p_net
+            )
+            self.controller.deploy(self.v_net, self.p_net, self.solution)
+            total_p_resource_1_n = self.calculator.calc_sum_pnet_node_resource(
+                self.p_net
+            )
+            total_p_resource_1_e = self.calculator.calc_sum_pnet_link_resource(
+                self.p_net
+            )
+            total_p_resource_0_n = self.calculator.calc_sum_pnet_node_resource(
+                self.p_net_backup
+            )
+            total_p_resource_0_e = self.calculator.calc_sum_pnet_link_resource(
+                self.p_net_backup
+            )
+            total_p_resource_1 = self.calculator.calc_sum_pnet_resource(
+                self.p_net
+            )
+            total_p_resource_0 = self.calculator.calc_sum_pnet_resource(
+                self.p_net_backup
+            )
+            assert total_p_resource_2 == total_p_resource_0
+            assert (
+                total_p_resource_0_n - total_p_resource_1_n
+            ) / self.v_net_setting_num_node_resource_attrs == solution[
+                "v_net_node_cost"
+            ], f"{total_p_resource_0_n - total_p_resource_1_n}, {solution['v_net_node_cost']}"
+            assert (
+                total_p_resource_0_e - total_p_resource_1_e
+            ) / self.v_net_setting_num_link_resource_attrs == solution[
+                "v_net_link_cost"
+            ], f"{total_p_resource_0_e - total_p_resource_1_e}, {solution['v_net_link_cost']}"
+            # assert total_p_resource_0 - total_p_resource_1 == solution['v_net_cost'], f"{total_p_resource_0 - total_p_resource_1}, {solution['v_net_cost']}"
+        # Failure
+        else:
+            failure_reason = self.get_failure_reason(self.solution)
+            self.rollback_for_failure(reason=failure_reason)
+        record = self.count_and_add_record()
+        done = self.transit_obs()
+        return (
+            self.get_observation(),
+            self.compute_reward(),
+            done,
+            self.get_info(record),
+        )
+
+    def get_info(self, record={}):
+        info = copy.deepcopy(record)
+        return info
+
+    def get_observation(self):
+        return {"v_net": copy.deepcopy(self.v_net), "p_net": copy.deepcopy(self.p_net)}
+
+    def compute_reward(self):
+        return 0
+
+    def generate_action_mask(self):
+        return np.arange(self.p_net.num_nodes)
+
+
+if __name__ == "__main__":
     pass

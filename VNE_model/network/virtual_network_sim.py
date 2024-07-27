@@ -106,7 +106,7 @@ class VirtualNetworkRequestSimulator(object):
             v_net.generate_topology(
                 num_nodes=self.v_nets_size[i], **self.v_sim_setting["topology"]
             )
-            v_net.generate_attrs_data()
+            v_net.generate_attrs_data(n_bool=True, l_bool=True)
 
             return v_net
 

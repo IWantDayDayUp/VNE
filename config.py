@@ -4,7 +4,7 @@ import yaml
 import networkx as nx
 import pprint
 import sys
-from utils.class_dict import ClassDict
+from VNE_model.utils.class_dict import ClassDict
 
 
 class Config(ClassDict):

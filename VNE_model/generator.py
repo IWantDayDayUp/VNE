@@ -2,9 +2,9 @@ import os
 import random
 import numpy as np
 
-from .physical_network import PhysicalNetwork
-from .virtual_network_sim import VirtualNetworkRequestSimulator
-from .utils import (
+from .network.physical_network import PhysicalNetwork
+from .network.virtual_network_sim import VirtualNetworkRequestSimulator
+from .network.utils import (
     get_p_net_dataset_dir_from_setting,
     get_v_nets_dataset_dir_from_setting,
 )

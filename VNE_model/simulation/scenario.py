@@ -2,7 +2,7 @@ import os
 import tqdm
 
 from .controller import Controller
-from .counter import Counter
+from .calculator import Calculator
 from .recorder import Recorder
 from .solution import Solution
 
@@ -23,7 +23,7 @@ class Scenario:
     @classmethod
     def from_config(cls, Env, Solver, config):
         """Create scenario from setting"""
-        counter = Counter(
+        calculator = Calculator(
             config.v_net_setting["node_attrs_setting"],
             config.v_net_setting["link_attrs_setting"],
             **vars(config),
@@ -33,7 +33,7 @@ class Scenario:
             config.v_net_setting["link_attrs_setting"],
             **vars(config),
         )
-        recorder = Recorder(counter, **vars(config))
+        recorder = Recorder(calculator, **vars(config))
 
         # Create/Load p_net
         config.p_net_dataset_dir = get_p_net_dataset_dir_from_setting(
@@ -41,32 +41,34 @@ class Scenario:
         )
         # print(config.p_net_dataset_dir)
         if os.path.exists(config.p_net_dataset_dir):
-            p_net = PhysicalNetwork.load_dataset(config.p_net_dataset_dir)
+            p_net = PhysicalNetwork.load_from_setting(config.p_net_dataset_dir)
             (
                 print(f"Load Physical Network from {config.p_net_dataset_dir}")
                 if config.verbose >= 1
                 else None
             )
         else:
-            p_net = PhysicalNetwork.from_setting(config.p_net_setting)
+            p_net = PhysicalNetwork.create_from_setting(config.p_net_setting)
             print(f"*** Generate Physical Network from setting")
 
         # Create v_net simulator
         v_net_simulator = VirtualNetworkRequestSimulator.from_setting(
-            config.v_sim_setting
+            config.v_net_setting
         )
         print(f"Create VNR Simulator from setting") if config.verbose >= 1 else None
 
         # create env and solver
-        env = Env(p_net, v_net_simulator, controller, recorder, counter, **vars(config))
-        solver = Solver(controller, recorder, counter, **vars(config))
+        env = Env(
+            p_net, v_net_simulator, controller, recorder, calculator, **vars(config)
+        )
+        solver = Solver(controller, recorder, calculator, **vars(config))
 
         # Create scenario
         scenario = cls(env, solver, config)
         if config.verbose >= 2:
             print(config)
         if config.if_save_config:
-            config.save()
+            config.save_config()
 
         return scenario
 
